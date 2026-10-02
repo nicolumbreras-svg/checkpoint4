@@ -23,18 +23,18 @@ El sistema implementa un patrón **Router / Worker Agents** coordinado por un or
 Catálogo Usados             Agendamiento              Datos Empresa
 (Google Sheets)           (Google Calendar)           (Google Sheets)
 └─────────────────────────┼─────────────────────────┘
-│
-[Respuesta Normalizada]
-│
-[Detección de Canal de Entrada]
-├── Telegram ──> [Aprobación HITL en Slack] ──> [Telegram Message]
-└── Gmail    ──> [Borrador Gmail (DRAFT)]
-│
-[¿Turno Agendado? == Sí]
-│
-[Upsert Oportunidad en Salesforce]
-│
-[Log Observabilidad + Compresión Memoria (Cohere) + Airtable]
+                          │
+                [Respuesta Normalizada]
+                          │
+             [Detección de Canal de Entrada]
+                  ├── Telegram ──> [Aprobación HITL en Slack] ──> [Telegram Message]
+                  └── Gmail    ──> [Borrador Gmail (DRAFT)]
+             │
+             [¿Turno Agendado? == Sí]
+                │
+                [Upsert Oportunidad en Salesforce]
+             │
+             [Log Observabilidad + Compresión Memoria (Cohere) + Airtable]
 
 
 ---
