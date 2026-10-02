@@ -24,7 +24,7 @@ Catálogo Usados             Agendamiento              Datos Empresa
 (Google Sheets)           (Google Calendar)           (Google Sheets)
 └─────────────────────────┼─────────────────────────┘
                           │
-                [Respuesta Normalizada]
+              [Respuesta Normalizada]
                           │
              [Detección de Canal de Entrada]
                   ├── Telegram ──> [Aprobación HITL en Slack] ──> [Telegram Message]
