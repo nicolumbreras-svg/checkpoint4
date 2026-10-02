@@ -8,7 +8,7 @@ Este repositorio contiene la arquitectura, flujos de trabajo y configuraciones n
 
 El sistema implementa un patrón **Router / Worker Agents** coordinado por un orquestador central (Módulo 4) que delega tareas específicas a subflujos especializados (Módulos 1, 2 y 3).
 
-[Cliente: Telegram / Gmail]
+                      [Cliente: Telegram / Gmail]
                                │
                                ▼
                   [Módulo 4: Orquestador Central]
