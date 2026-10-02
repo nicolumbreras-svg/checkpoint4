@@ -1,0 +1,237 @@
+{
+  "name": "modulo3_workflow1",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.query }}",
+        "options": {
+          "systemMessage": "ROL Y OBJETIVO\nSos un especialista técnico en el catálogo de vehículos usados. Tu única función es analizar la consulta del usuario, consultar el inventario disponible y brindar asesoramiento preciso sobre los modelos, marcas, precios y características de los autos.\n\nENTRADA\nRecibirás la consulta limpia del cliente pasada por el Workflow Manager (por ejemplo: preferencias de modelo, presupuesto o uso del vehículo).\nSi en la entrada sólo te llega una letra, significa que es una opción de las propuestas anteriormente, utilizá la herramienta de historial para saber qué opción brindaste y seleccionala para dar la salida.\n\nHERRAMIENTAS\nTenés a tu disposición la herramienta de Google Sheets para consultar el catálogo y datos de la empresa. Usala OBLIGATORIAMENTE para obtener datos reales antes de generar cualquier recomendación.\n\nREGLAS DE ACTUACIÓN\n1. Basa tus respuestas EXCLUSIVAMENTE en la información devuelta por la herramienta de Google Sheets. No inventes modelos ni especificaciones.\n2. Usá un tono cordial, formal pero cercano. Podés tutear al cliente con respeto.\n3. Si la información técnica solicitada no está en la planilla, indicá que se informará en detalle durante una visita presencial e invitalo a agendar una cita.\n4. ALCANCE ACOTADO: NO intentes agendar citas ni consultar calendarios. Si el usuario te pide agendar, explícale que su solicitud será derivada con el especialista de agendas.\n5. Proponele al usuario opciones de autos en una lista con letras del alfabeto desde la a hasta la e (5 opciones).\n\n\nCONTRATO DE SALIDA (ESTRICTO)\nRedactá únicamente la respuesta amable, completa y estructurada que se le enviará directamente al usuario final por Telegram. No agregues etiquetas JSON ni bloques de código.\n\nREGLA DE ETIQUETADO DE VEHÍCULO:\nCuando el cliente elija, confirme o muestre un interés claro por un vehículo específico, debés incluir la siguiente etiqueta exacta al final de tu respuesta:\nAUTO SELECCIONADO: [Nombre Exacto del Vehículo]\n\nEjemplo de respuesta:\n\"¡Excelente elección! La Volkswagen Amarok V6 cuenta con motor de 258 CV y caja automática. AUTO SELECCIONADO: [Volkswagen Amarok V6]\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "e510ddf2-c808-4589-a88a-6dc1606eed9e",
+      "name": "AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Utiliza esta herramienta EXCLUSIVAMENTE cuando el cliente pregunte por información técnica, modelos, marcas o características de los vehículos o necesite información de la empresa.\n\nEn la primer hoja se cuenta con un listado de autos a disposición, cada columna indica alguna característica, y cada fila un modelo de auto distinto.\nEn la hoja \"Datos de la empresa\" se encuentra una tabla con información de la empresa para usar si el cliente necesita\n\nNo se debe utilizar para agendar citas",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TwW7fvM8dIUrJUdjbCiFY4jsXGznbPOgoGIlKNfMjzg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Productos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TwW7fvM8dIUrJUdjbCiFY4jsXGznbPOgoGIlKNfMjzg/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        640,
+        240
+      ],
+      "id": "cd97f77e-4522-4f5b-a578-0560ffafb53c",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "m3ZyzVnKsYtqlwaq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        288
+      ],
+      "id": "07815fcf-130e-42af-bdd1-aee79631e85d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "4CccSWPdPTJ5OQqH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bdee71d0-06ab-4747-ba5c-7fecc7e4e05c",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "6d79d5f5-c23a-458c-a205-a6b4005fe829",
+              "name": "data.respuesta_cliente",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "d96322ea-973f-450a-96ff-e1b3e3112ce2",
+              "name": "data.estado",
+              "value": "={{ $json.output.toLowerCase().includes('elegiste') || $json.output.toLowerCase().includes('seleccionado') || $json.output.toLowerCase().includes('te interesa') ? 'AUTO SELECCIONADO' : 'CONSULTANDO' }}",
+              "type": "string"
+            },
+            {
+              "id": "f486d7bc-28bf-452b-b561-31e4a709b049",
+              "name": "data.clave",
+              "value": "={{ $json.output.match(/AUTO SELECCIONADO:\\s*\\[(.*?)\\]/i)?.[1] || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        832,
+        -16
+      ],
+      "id": "391a49a2-4c5f-4846-a936-1470d38fc2d8",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "dba8744d-f863-4e72-873d-aaf3995f54b3",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "560935d8-97ba-45c8-b831-81c0f9dafe39",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "eab9bf8c-195c-4770-9d49-cc891b3b839f",
+              "name": "data.respuesta_cliente",
+              "value": "Disculpá, en este momento experimentamos un problema técnico. Por favor, intentá nuevamente en unos minutos.",
+              "type": "string"
+            },
+            {
+              "id": "685ad07e-e8f4-437b-b4b6-4bed9f57e333",
+              "name": "error.message",
+              "value": "={{ $json.message || 'Error desconocido en ejecución de sub-flujo' }}",
+              "type": "string"
+            },
+            {
+              "id": "8c4bdce5-d621-4546-9024-68e04f79a91a",
+              "name": "data.estado",
+              "value": "ERROR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        832,
+        240
+      ],
+      "id": "12defe02-8eb5-46ce-8d1f-e44f89858cf6",
+      "name": "Error"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3f907aca-c3c6-44dd-83b1-eedcd46f898c",
+  "meta": {
+    "instanceId": "9d56dafec9cde7607067980fdd28d6e659f0f74667a74870c335326c02886524"
+  },
+  "nodeGroups": [],
+  "id": "oaLcg1iexZduuABq",
+  "tags": []
+}

@@ -1,0 +1,1850 @@
+{
+  "name": "checkpoint4_nicolas_lumbreras",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=[INICIO DE CONTEXTO COMPARTIDO]\nDatos clave del usuario: {{ $('Busco Historial').item.json.fields?.['Datos Clave'] || $('Nuevo Cliente').item.json.fields?.['Datos Clave'] ||  $('Mensaje Cliente').item.json.cliente  }}\nEl estado de su última solicitud es: {{ $('Busco Historial').item.json.fields?.Estado || $('Nuevo Cliente').item.json.fields?.Estado || 'NUEVO' }}\nEl contexto de la última charla es: {{ $('Busco Historial').item.json.fields?.Resumen || $('Nuevo Cliente').item.json.fields?.Resumen || 'Primer contacto con el cliente. Sin historial previo.' }}\n[FIN DEL CONTEXTO COMPARTIDO]\n\nMensaje del cliente: {{ $('Mensaje Cliente').item.json.mensaje }}",
+        "options": {
+          "systemMessage": "ROL Y OBJETIVO\nSos un clasificador semántico de intenciones para un concesionario de autos. Tu única función es analizar el mensaje de entrada del usuario y clasificarlo dentro de una taxonomía cerrada de negocio.\n\nTAXONOMÍA CERRADA\n1. CATALOGO:\n   - Consultas sobre modelos, marcas, precios, stock o fichas técnicas de vehículos.\n   - Preguntas sobre información general o datos de la empresa.\n- Si el usuario solo saluda, inicia la conversación o envía un mensaje genérico (ej. \"hola\", \"buenas\", \"qué tal\"), clasifícalo como CATALOGO.\n2. AGENDAMIENTO:\n   - Solicitudes para coordinar, reservar o consultar disponibilidad de turnos.\n   - Selección de opciones de fechas u horarios presentados previamente (ej. \"Opción 1\", \"El martes\").\n3. DATOS\n   - Solicitudes de contacto de la empresa, datos generales de la empresa, ubicación, teléfono, responsables.\n4. FALLBACK\n- Si el usuario contesta con insultos\n- Si el usuario pregunta cualquier tema que no pueda ser catalogado como las opciones anteriores\n\nREGLAS DE CLASIFICACIÓN\n- Si el usuario hace una consulta mixta (ej. \"Quiero saber el precio del Gol y agendar una visita\"), asigná prioridad a la categoría AGENDAMIENTO.\n- Utilizá la herramienta del historial para entender el contexto. Si no sabés donde clasificar porque la pregunta es ambigua, envialo al último lugar donde clasificaste.\n- Si el usuario sólo envía un número, envialo a AGENDAMIENTO.\n- Si el usuario sólo envía una letra, envialo a CATALOGO.\n- No intentes responder a la consulta del usuario ni usar herramientas externas salvo el historial.\n\nCONTRATO DE SALIDA (ESTRICTO)\nDebés responder ÚNICAMENTE con la palabra clave exacta en mayúsculas: CATALOGO, DATOS, AGENDAMIENTO o FALLBACK. No agregues saludos, signos de puntuación ni texto adicional.\n",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -80,
+        112
+      ],
+      "id": "c81efc12-608a-49dd-9a40-b9dcf50a1c33",
+      "name": "AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "command-r-08-2024",
+        "options": {
+          "temperature": 0.1,
+          "maxRetries": 2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatCohere",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        384
+      ],
+      "id": "6be745cb-a539-4985-b3c2-e0d9d9820190",
+      "name": "Cohere Chat Model",
+      "credentials": {
+        "cohereApi": {
+          "id": "1o52Qv3lPGIyEoKo",
+          "name": "Cohere account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "65f3c9a9-ca72-4c36-b263-c5ca28997d13",
+              "name": "data.respuesta_cliente",
+              "value": "Disculpá, no logré comprender exactamente tu consulta o experimentamos un inconveniente técnico. Hemos derivado tu mensaje a un representante para que te contacte a la brevedad.",
+              "type": "string"
+            },
+            {
+              "id": "aa4d37e1-f436-4dd3-ac28-d5d6b9675f6b",
+              "name": "status",
+              "value": "fallback",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1152,
+        624
+      ],
+      "id": "dad06541-9dde-43fb-8dab-10fed3a89885",
+      "name": "fallback"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "edac2c36-cf72-4b1b-8052-1f4130ded40d",
+              "name": "user_name",
+              "value": "={{ $('Busco Historial').item.json.fields?.['Datos Clave'] || $('Nuevo Cliente').item.json.fields?.['Datos Clave'] || $('Mensaje Cliente').item.json.cliente  }}",
+              "type": "string"
+            },
+            {
+              "id": "b3f9d423-2edf-402d-836c-0f147a85579f",
+              "name": "last_summary",
+              "value": "={{ $('Busco Historial').item.json.fields?.Resumen || 'Primer contacto con el cliente. Sin historial previo.' }}",
+              "type": "string"
+            },
+            {
+              "id": "1cda2b9f-cfc8-440c-b0d9-aea0140a72a0",
+              "name": "status",
+              "value": "={{ $('Busco Historial').item.json.fields?.Estado || 'NUEVO' }}",
+              "type": "string"
+            },
+            {
+              "id": "62e7bd27-ce6b-4fca-9122-5bcd885f8f45",
+              "name": "chatId",
+              "value": "={{ $('Mensaje Cliente').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -320,
+        112
+      ],
+      "id": "1dd3baa6-60ba-46aa-b5b8-4646fdfb3f17",
+      "name": "Preparar contexto"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appnDpfhxENGLIk7X",
+          "mode": "list",
+          "cachedResultName": "Base_Vendedor",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblimqediOCF0p47k",
+          "mode": "list",
+          "cachedResultName": "Persistencia",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X/tblimqediOCF0p47k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Respuesta BOT').first()?.json?.id }}",
+            "Resumen": "={{ $('Respuesta BOT').first()?.json?.Resumen }}",
+            "Estado": "={{ $('Respuesta BOT').first()?.json?.Estado }}",
+            "Contador": "={{ (Number($('Busco Historial').first()?.json?.fields?.Contador) || 1) + 1 }}",
+            "Fecha de Actualización": "={{ $now }}",
+            "Datos Clave": "={{ $('Respuesta BOT').first()?.json?.clave }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Actualización",
+              "displayName": "Fecha de Actualización",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos Clave",
+              "displayName": "Datos Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contador",
+              "displayName": "Contador",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3712,
+        656
+      ],
+      "id": "ed6ba8df-01cc-4052-8fce-0e59cf85bae0",
+      "name": "Mensaje Completo",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "xCD0HMVdndJ5MFMb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "command-r-08-2024",
+        "options": {
+          "temperature": 0.3,
+          "maxRetries": 2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatCohere",
+      "typeVersion": 1,
+      "position": [
+        3536,
+        432
+      ],
+      "id": "0c635508-e2a0-42df-bdcb-d9ae5c6dd33b",
+      "name": "Cohere Chat Model1",
+      "credentials": {
+        "cohereApi": {
+          "id": "1o52Qv3lPGIyEoKo",
+          "name": "Cohere account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos un módulo de compresión de memoria para un agente conversacional de un concesionario de autos.\nTu único objetivo es analizar el historial conversacional previo junto con el nuevo mensaje, y generar un resumen estructurado.\n\nHISTORIAL PREVIO EN BASE DE DATOS:\n{{ $('Busco Historial').first()?.json?.fields?.Resumen || 'Sin historial previo' }}\n\nÚLTIMA INTERACCIÓN:\n- Cliente: \"{{ $('Mensaje Cliente').item.json.mensaje }}\"\n- Bot: \"{{ $('Respuesta BOT').first()?.json?.respuesta_cliente }}\"\n\nCONTRATO DE SALIDA ESTRICTO (Formato JSON):\nRespondé ÚNICAMENTE con un objeto JSON válido. No agregues saludos, ni delimitadores de código Markdown (como ```json), ni texto adicional.\n\nEl objeto JSON debe contener exactamente los siguientes campos:\n- \"asunto_principal\": Texto breve con el tema central de la consulta.\n- \"puntos_clave\": Lista/Array de cadenas con los datos concretos (autos consultados, fechas, etc.).\n- \"accion_requerida\": Texto breve con el siguiente paso esperado.",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3408,
+        208
+      ],
+      "id": "b1ea0ca4-2488-44b3-ae4f-6255e9f00594",
+      "name": "Resumen"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "CATALOGO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6d8e2b59-09e0-4f26-a39e-747b79633684"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d1e61cbd-8bfe-4566-874e-3c3d4a57a1c7",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "AGENDAMIENTO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3fd9bee3-32f6-41ea-9568-9d22379d7377",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "DATOS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        64
+      ],
+      "id": "9af4b900-ae20-4625-9494-f4ac4c32a6f0",
+      "name": "Selección Workflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a2e5aceb-205d-43ec-b27b-ed46d996b3c9",
+              "leftValue": "={{ (Number($('Busco Historial').first()?.json?.fields?.Contador) || 0) + 1 }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3184,
+        208
+      ],
+      "id": "89e1dd29-5895-4597-83d3-642814198d9b",
+      "name": "Supera Umbral Mensajes"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "44193d82-dc00-43f6-aa26-40dc3eee3fe2",
+              "leftValue": "={{ !!$json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -528,
+        128
+      ],
+      "id": "38d0dd9b-176b-4717-b683-944c9cec6bb4",
+      "name": "Es Cliente Existente",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appnDpfhxENGLIk7X",
+          "mode": "list",
+          "cachedResultName": "Base_Vendedor",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblimqediOCF0p47k",
+          "mode": "list",
+          "cachedResultName": "Persistencia",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X/tblimqediOCF0p47k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Respuesta BOT').first()?.json?.id }}",
+            "Resumen": "={{ $json.text || $json.output }}",
+            "Estado": "={{ $('Respuesta BOT').first()?.json?.Estado }}",
+            "Fecha de Actualización": "={{ $now }}",
+            "Contador": 1,
+            "Datos Clave": "={{ $('Respuesta BOT').first()?.json?.clave }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Actualización",
+              "displayName": "Fecha de Actualización",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos Clave",
+              "displayName": "Datos Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contador",
+              "displayName": "Contador",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        3728,
+        208
+      ],
+      "id": "d71883a5-b2da-4a00-a0b7-19073baafae3",
+      "name": "Guardo Resumen",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "xCD0HMVdndJ5MFMb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appnDpfhxENGLIk7X",
+          "mode": "list",
+          "cachedResultName": "Base_Vendedor",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblimqediOCF0p47k",
+          "mode": "list",
+          "cachedResultName": "Persistencia",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X/tblimqediOCF0p47k"
+        },
+        "filterByFormula": "={Session_ID} = '{{ $('Mensaje Cliente').item.json.id }}'",
+        "options": {
+          "fields": [
+            "Session_ID",
+            "Fecha de Actualización",
+            "Resumen",
+            "Estado",
+            "Datos Clave",
+            "Contador"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -720,
+        128
+      ],
+      "id": "ec52e279-8511-4442-b8f2-7cf9056d6752",
+      "name": "Busco Historial",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "xCD0HMVdndJ5MFMb",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appnDpfhxENGLIk7X",
+          "mode": "list",
+          "cachedResultName": "Base_Vendedor",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblimqediOCF0p47k",
+          "mode": "list",
+          "cachedResultName": "Persistencia",
+          "cachedResultUrl": "https://airtable.com/appnDpfhxENGLIk7X/tblimqediOCF0p47k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Session_ID": "={{ $('Mensaje Cliente').item.json.id }}",
+            "Estado": "NUEVO",
+            "Fecha de Actualización": "={{ $now }}",
+            "Resumen": "Primer contacto con el cliente. Sin historial conversacional previo.",
+            "Datos Clave": "={{ $('Mensaje Cliente').item.json.cliente }}",
+            "Contador": 1
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Actualización",
+              "displayName": "Fecha de Actualización",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Datos Clave",
+              "displayName": "Datos Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contador",
+              "displayName": "Contador",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -336,
+        592
+      ],
+      "id": "dcb39f47-23b0-47b8-9d67-f508bc8f720e",
+      "name": "Nuevo Cliente",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "xCD0HMVdndJ5MFMb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Mensaje Cliente').item.json.id }}",
+        "contextWindowLength": 7
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        384
+      ],
+      "id": "a2522a10-d9b6-474e-891d-20ca8e17e41e",
+      "name": "Memoria Simple"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7f6b5d22-0a65-49b5-81cd-1836d8bd9b61",
+              "name": "query",
+              "value": "=Mensaje del cliente: {{ $('Mensaje Cliente').item.json.mensaje }}\nContexto e historial previo: {{ $('Busco Historial').item.json.fields?.Resumen || 'Sin historial previo' }}",
+              "type": "string"
+            },
+            {
+              "id": "5cb2d551-bce9-4704-843d-5e3dab4122be",
+              "name": "chatId",
+              "value": "={{ $('Mensaje Cliente').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "2a841515-4537-4e3c-9334-fc36e139f181",
+              "name": "output",
+              "value": "={{ $('AI Agent').item.json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        304,
+        112
+      ],
+      "id": "d8c84ea4-846a-48da-bc5b-bbcf696cd332",
+      "name": "Unifico Inputs a Workflows",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "oaLcg1iexZduuABq",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/oaLcg1iexZduuABq",
+          "cachedResultName": "modulo3_workflow1"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        0
+      ],
+      "id": "57db51eb-7fc0-4e40-b8c2-8bebd5937cb1",
+      "name": "Workflow1 - Catalogo",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "SgOEyQ0iDullRrdf",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/SgOEyQ0iDullRrdf",
+          "cachedResultName": "modulo3_workflow2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": true,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        192
+      ],
+      "id": "eabd0002-4e26-44ba-89c5-2a7c999de210",
+      "name": "Workflow2 - Agendamiento",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "CSXV95Q6WU9gninS",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/CSXV95Q6WU9gninS",
+          "cachedResultName": "modulo3_workflow3"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": true,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        896,
+        416
+      ],
+      "id": "c05d0f96-b6c3-4bcc-a082-36a0212ff245",
+      "name": "Workflow3 - Datos",
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "vendedorlatuercaloca@gmail.com",
+        "subject": "=Log de Observabilidad - Vendedor de autos",
+        "message": "=Hola equipo de supervisión, Se ha registrado una nueva interacción en el bot de ventas de autos.\n\nHistoria del usuario:\n\n{{ $('Busco Historial').item.json.fields?.Resumen || 'Sin historial previo' }}\n\nCliente dijo: \"{{ $('Mensaje Cliente').item.json.mensaje }}\". Bot respondió: \"{{ $('Respuesta BOT').first()?.json?.respuesta_cliente }}\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2928,
+        208
+      ],
+      "id": "94b17157-6f3c-497a-b9ba-ddd3471c065f",
+      "name": "Log de Observabilidad",
+      "webhookId": "8c695507-e11f-4d91-bdea-890680768651",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Aitb6800rGaA0zDZ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ \n  ($json.From || '').toLowerCase().includes('vendedorlatuercaloca@gmail.com') ||\n  ($json.Subject || '').toLowerCase().includes('auto-reply') || \n  ($json.Subject || '').toLowerCase().includes('out of office') || \n  ($json.Subject || '').toLowerCase().includes('undeliverable') || \n  ($json.Subject || '').toLowerCase().includes('respuestas automáticas') || \n  ($json.Subject || '').toLowerCase().includes('log de observabilidad') ||\n  ($json.From || '').toLowerCase().includes('no-reply@') || \n  ($json.From || '').toLowerCase().includes('noreply@') \n}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "7bbe5693-a813-442a-aa60-69bae8270d1c",
+      "name": "① IF — ¿Es Auto-reply / No-reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "sender": ""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1840,
+        -96
+      ],
+      "id": "33206d26-0416-4432-81ad-60b630952a61",
+      "name": "Cliente Gmail",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Aitb6800rGaA0zDZ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "chatIds": ""
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -1824,
+        128
+      ],
+      "id": "aac3148a-56f0-47f4-8261-019f999e0892",
+      "name": "Cliente Telegram",
+      "webhookId": "f09ba31b-8cce-498e-ab93-0a5ed661093f",
+      "credentials": {
+        "telegramApi": {
+          "id": "5pEzWFWwxhzEuzuq",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "9124b64b-ba07-42c6-9e18-a5dfc5f9aa45",
+      "name": "Stop: Cortar Bucle Infinito",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7d50596e-d98f-4d8d-b7d1-6465d40df8c3",
+              "name": "canal",
+              "value": "={{ $json.message ? 'telegram' : 'email' }}",
+              "type": "string"
+            },
+            {
+              "id": "4128f2c8-f5c8-49d7-99ad-84c06ec693ca",
+              "name": "id",
+              "value": "={{ $json.message?.chat?.id || $json.From?.value?.[0]?.address || $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "4b08dd34-3f56-4984-b499-b7eb52300b49",
+              "name": "mensaje",
+              "value": "={{ $json.message?.text || $json.text || $json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "438bc7f3-7c4a-4f17-95e6-393272d7217e",
+              "name": "cliente",
+              "value": "={{ $json.message?.from?.first_name && ' ' && $json.message?.from?.last_name || $json.from?.value?.[0]?.name || 'Cliente' }}",
+              "type": "string"
+            },
+            {
+              "id": "82767351-4aea-4d75-913a-7bd19c37c543",
+              "name": "subject",
+              "value": "={{ $json.Subject || 'Consulta sin asunto' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1200,
+        128
+      ],
+      "id": "f171ef61-d700-4c5f-bbc7-5352475c885a",
+      "name": "Mensaje Cliente"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6a1c4ce3-fb54-4639-b36f-294b13e54937",
+              "name": "id",
+              "value": "={{ $('Busco Historial').item.json.id || $('Nuevo Cliente').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "4b7da7b2-4090-43aa-90a7-572a3faf52ee",
+              "name": "Resumen",
+              "value": "={{ $('Busco Historial').item.json.fields?.Resumen || 'Sin historial previo' }}  Cliente dijo: \"{{ $('Mensaje Cliente').item.json.mensaje }}\". Bot respondió: \"{{ $json.data?.respuesta_cliente || $json.respuesta_cliente }}}\"",
+              "type": "string"
+            },
+            {
+              "id": "fca3af41-4b86-4deb-ace2-4132b2c2c17b",
+              "name": "Estado",
+              "value": "={{   $(\"Workflow2 - Agendamiento\").isExecuted     ? $(\"Workflow2 - Agendamiento\").first()?.json?.data?.estado     : $(\"Workflow1 - Catalogo\").isExecuted     ? $(\"Workflow1 - Catalogo\").first()?.json?.data?.estado     : $(\"Workflow3 - Datos\").isExecuted     ? $(\"Workflow3 - Datos\").first()?.json?.data?.estado     : $(\"fallback\").isExecuted     ? $(\"fallback\").first()?.json?.data?.estado     : 'CONSULTANDO' }}",
+              "type": "string"
+            },
+            {
+              "id": "caaf2ac5-18bf-4ec9-b52c-06dd041d0c20",
+              "name": "clave",
+              "value": "={{\n  ($(\"Busco Historial\").first()?.json?.fields?.['Datos Clave'] || $('Mensaje Cliente').item.json.cliente  || 'Cliente') +\n  ($(\"Workflow1 - Catalogo\").isExecuted && $(\"Workflow1 - Catalogo\").first()?.json?.data?.clave && !String($(\"Busco Historial\").first()?.json?.fields?.['Datos Clave'] || '').includes($(\"Workflow1 - Catalogo\").first()?.json?.data?.clave)\n    ? ' | ' + $(\"Workflow1 - Catalogo\").first()?.json?.data?.clave\n    : $(\"Workflow2 - Agendamiento\").isExecuted && $(\"Workflow2 - Agendamiento\").first()?.json?.data?.clave && !String($(\"Busco Historial\").first()?.json?.fields?.['Datos Clave'] || '').includes($(\"Workflow2 - Agendamiento\").first()?.json?.data?.clave)\n    ? ' | ' + $(\"Workflow2 - Agendamiento\").first()?.json?.data?.clave\n    : '')\n}}",
+              "type": "string"
+            },
+            {
+              "id": "f29f41de-d637-4e13-b8e7-338d866138e2",
+              "name": "respuesta_cliente",
+              "value": "={{ $json.data?.respuesta_cliente || $json.respuesta_cliente }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1248,
+        112
+      ],
+      "id": "357a7ebb-1774-490a-b77a-0771992243aa",
+      "name": "Respuesta BOT",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Mensaje Cliente').item.json.id }}",
+        "text": "={{ $('Respuesta BOT').first()?.json?.respuesta_cliente }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        -80
+      ],
+      "id": "d86b390d-bcfa-4413-a07e-871276eb5474",
+      "name": "Mensaje a Cliente Telegram",
+      "webhookId": "54fd4df3-8695-4b1e-87e2-2d3c618c3dd8",
+      "credentials": {
+        "telegramApi": {
+          "id": "5pEzWFWwxhzEuzuq",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=RE: {{ $('Mensaje Cliente').item.json.subject }}",
+        "message": "={{ $('Respuesta BOT').first()?.json?.respuesta_cliente }}\n<br><br>\n<b>Tu consulta:</b><br>\n<i>{{ $('Mensaje Cliente').item.json.mensaje }}</i>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1872,
+        224
+      ],
+      "id": "a4144897-e77e-4f34-8e74-bbac833ba7f3",
+      "name": "Mensaje a Cliente Mail - DRAFT",
+      "webhookId": "8c695507-e11f-4d91-bdea-890680768651",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Aitb6800rGaA0zDZ",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "upsert",
+        "externalId": "CODIGO_EXTERNO__c",
+        "externalIdValue": "={{ $('Busco Historial').first()?.json?.id || $('Nuevo Cliente').first()?.json?.id }}",
+        "name": "={{ $('Respuesta BOT').item.json.clave }}",
+        "closeDate": "2026-11-11T00:00:00",
+        "stageName": "Meet & Present",
+        "additionalFields": {
+          "customFieldsUi": {
+            "customFieldsValues": [
+              {
+                "fieldId": "CODIGO_EXTERNO__c",
+                "value": "={{ $('Busco Historial').first()?.json?.id || $('Nuevo Cliente').first()?.json?.id }}"
+              }
+            ]
+          },
+          "description": "=Contacto presencial con cliente por solicitud enviada vía BOT. \n{{ $('Respuesta BOT').first()?.json?.Resumen }}"
+        }
+      },
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1.1,
+      "position": [
+        2656,
+        48
+      ],
+      "id": "a9e0e161-925e-4cf7-84a2-544d0eeba508",
+      "name": "Actualizar Oportunidad SalesForce",
+      "credentials": {
+        "salesforceOAuth2Api": {
+          "id": "OyC4QoNALjzB4nqm",
+          "name": "Salesforce account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a8d57763-258a-480a-a893-b3aa411a6bc4",
+              "leftValue": "={{ $('Respuesta BOT').item.json.Estado }}",
+              "rightValue": "TURNO AGENDADO",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2432,
+        240
+      ],
+      "id": "a9ec3b9c-6f77-4b7e-b82c-50732d8214ec",
+      "name": "SI TURNO AGENDADO"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a8d57763-258a-480a-a893-b3aa411a6bc4",
+              "leftValue": "={{ $('Mensaje Cliente').item.json.canal }}",
+              "rightValue": "telegram",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1424,
+        112
+      ],
+      "id": "cc7608a9-2df1-49fc-8a44-aa5d869f71d6",
+      "name": "SI ES CANAL TELEGRAM"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a07a06d2-c431-47da-8b25-f0cc27c470eb",
+              "leftValue": "={{ $('Mensaje Cliente').item.json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -976,
+        128
+      ],
+      "id": "c6c21e92-5fe8-4d5c-a56f-1a989df15338",
+      "name": "SI el mensaje es vacío"
+    },
+    {
+      "parameters": {},
+      "id": "6ffe3fd1-c01b-40e1-9864-74d0353812c7",
+      "name": "Stop: Evita error 400",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0C70JHSR7A",
+          "mode": "list",
+          "cachedResultName": "telegram"
+        },
+        "message": "={{ $('Mensaje Cliente').first()?.json?.id }}:\nPREGUNTA: {{ $('Mensaje Cliente').first()?.json?.mensaje }}.\n\nRESPUESTA: {{ $('Respuesta BOT').first()?.json?.respuesta_cliente }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1664,
+        -64
+      ],
+      "id": "6cc384cc-04e9-48a5-84ce-83ce888f9bda",
+      "name": "Send message and wait for response",
+      "webhookId": "bdc2f3fa-3b2e-4c77-9f54-e830b319202b",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "mP44pwUBIcmymGpM",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4d40a532-c30d-436f-a6f7-778d68a10a18",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1888,
+        -64
+      ],
+      "id": "1c1604d1-8cf9-467a-83df-5f41e798a434",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Mensaje Cliente').item.json.id }}",
+        "text": "=Un operador se contactará con vos en unos instantes",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2144,
+        -272
+      ],
+      "id": "534103ed-cf44-4265-8e12-ccc2a7082998",
+      "name": "Mensaje a Cliente de Rechazo",
+      "webhookId": "54fd4df3-8695-4b1e-87e2-2d3c618c3dd8",
+      "credentials": {
+        "telegramApi": {
+          "id": "5pEzWFWwxhzEuzuq",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "vendedorlatuercaloca@gmail.com",
+        "subject": "=Log de Observabilidad - Vendedor de autos - CANCELA MENSAJE",
+        "message": "=ESTE MENSAJE HA SIDO RECHAZADO POR EL EQUIPO TECNICO\n\nHola equipo de supervisión, Se ha registrado una nueva interacción en el bot de ventas de autos.\n\nHistoria del usuario:\n\n{{ $('Busco Historial').item.json.fields?.Resumen || 'Sin historial previo' }}\n\nCliente dijo: \"{{ $('Mensaje Cliente').item.json.mensaje }}\". Bot respondió: \"{{ $('Respuesta BOT').first()?.json?.respuesta_cliente }}\"\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2352,
+        -272
+      ],
+      "id": "f16cf5cf-0e40-4ce8-aabb-27233969af2f",
+      "name": "Log de Observabilidad error",
+      "webhookId": "8c695507-e11f-4d91-bdea-890680768651",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Aitb6800rGaA0zDZ",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Unifico Inputs a Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cohere Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fallback": {
+      "main": [
+        [
+          {
+            "node": "Respuesta BOT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar contexto": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cohere Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Resumen",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumen": {
+      "main": [
+        [
+          {
+            "node": "Guardo Resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selección Workflow": {
+      "main": [
+        [
+          {
+            "node": "Workflow1 - Catalogo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Workflow2 - Agendamiento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Workflow3 - Datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supera Umbral Mensajes": {
+      "main": [
+        [
+          {
+            "node": "Resumen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Completo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Cliente Existente": {
+      "main": [
+        [
+          {
+            "node": "Preparar contexto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nuevo Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busco Historial": {
+      "main": [
+        [
+          {
+            "node": "Es Cliente Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nuevo Cliente": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria Simple": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unifico Inputs a Workflows": {
+      "main": [
+        [
+          {
+            "node": "Selección Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow1 - Catalogo": {
+      "main": [
+        [
+          {
+            "node": "Respuesta BOT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow2 - Agendamiento": {
+      "main": [
+        [
+          {
+            "node": "Respuesta BOT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow3 - Datos": {
+      "main": [
+        [
+          {
+            "node": "Respuesta BOT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log de Observabilidad": {
+      "main": [
+        [
+          {
+            "node": "Supera Umbral Mensajes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente Gmail": {
+      "main": [
+        [
+          {
+            "node": "① IF — ¿Es Auto-reply / No-reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente Telegram": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "① IF — ¿Es Auto-reply / No-reply?": {
+      "main": [
+        [
+          {
+            "node": "Stop: Cortar Bucle Infinito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop: Cortar Bucle Infinito": {
+      "main": [
+        []
+      ]
+    },
+    "Mensaje Cliente": {
+      "main": [
+        [
+          {
+            "node": "SI el mensaje es vacío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respuesta BOT": {
+      "main": [
+        [
+          {
+            "node": "SI ES CANAL TELEGRAM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje a Cliente Telegram": {
+      "main": [
+        [
+          {
+            "node": "SI TURNO AGENDADO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje a Cliente Mail - DRAFT": {
+      "main": [
+        [
+          {
+            "node": "SI TURNO AGENDADO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Oportunidad SalesForce": {
+      "main": [
+        [
+          {
+            "node": "Log de Observabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI TURNO AGENDADO": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Oportunidad SalesForce",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log de Observabilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI ES CANAL TELEGRAM": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje a Cliente Mail - DRAFT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI el mensaje es vacío": {
+      "main": [
+        [
+          {
+            "node": "Stop: Evita error 400",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Busco Historial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Mensaje a Cliente Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje a Cliente de Rechazo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje a Cliente de Rechazo": {
+      "main": [
+        [
+          {
+            "node": "Log de Observabilidad error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a5a30b53-a345-4300-bf9d-d4d262cc87e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9d56dafec9cde7607067980fdd28d6e659f0f74667a74870c335326c02886524"
+  },
+  "nodeGroups": [],
+  "id": "zO9UvOZ2F6E1Wmkl",
+  "tags": []
+}

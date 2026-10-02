@@ -1,0 +1,237 @@
+{
+  "name": "modulo3_workflow3",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.query }}",
+        "options": {
+          "systemMessage": "ROL Y OBJETIVO\nSos el recepcionista de la empresa. Tu única función es analizar la consulta del usuario, consultar el listado de datos generales de la empresa y brindar asesoramiento preciso sobre ella.\n\nENTRADA\nRecibirás la consulta limpia del cliente pasada por el Workflow Manager (por ejemplo: dirección de la empresa).\n\nHERRAMIENTAS\nTenés a tu disposición la herramienta de Google Sheets para consultar los datos de la empresa. Usala OBLIGATORIAMENTE para obtener datos reales antes de generar cualquier recomendación.\nReglas para usar la planilla:\n\nBusca únicamente en la solapa exacta llamada \"Datos de la Empresa\".\n\nLa información está estructurada en dos columnas: busca la solicitud del cliente en la columna \"Campo\" y utiliza la información correspondiente de la columna \"Valor\".\n\nREGLAS DE ACTUACIÓN\n1. Basa tus respuestas EXCLUSIVAMENTE en la información devuelta por la herramienta de Google Sheets. No inventes datos.\n2. Usá un tono cordial, formal pero cercano. Podés tutear al cliente con respeto.\n3. Si la información técnica solicitada no está en la planilla, indicá que se informará en detalle durante una visita presencial, dale la dirección de la empresa e invitalo a agendar una cita.\n4. ALCANCE ACOTADO: NO intentes agendar citas ni consultar calendarios. No intentes dar datos de vehículos. Si el usuario te pide algo distinto a tus funciones, explícale que su solicitud será derivada con el especialista correspondiente.\n\nCONTRATO DE SALIDA (ESTRICTO)\nRedactá únicamente la respuesta amable, completa y estructurada que se le enviará directamente al usuario final por Telegram. No agregues etiquetas JSON ni bloques de código."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "4e333877-8d6c-4133-83f3-f054392675b1",
+      "name": "AI Agent",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Utiliza esta herramienta EXCLUSIVAMENTE cuando el cliente pregunte por sobre información de la empresa.\nEn la hoja \"Datos de la empresa\" se cuenta con un listado de características de la empresa, La primer columna te muestra qué tipo de característica, y la segunda columna te brinda la información\n\nNo se debe utilizar para agendar citas, ni brindar datos de autos",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TwW7fvM8dIUrJUdjbCiFY4jsXGznbPOgoGIlKNfMjzg/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2109073862,
+          "mode": "list",
+          "cachedResultName": "Datos de la Empresa",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TwW7fvM8dIUrJUdjbCiFY4jsXGznbPOgoGIlKNfMjzg/edit#gid=2109073862"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        640,
+        240
+      ],
+      "id": "96c51fce-b24a-4180-9ec3-5e1b53b79cce",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "m3ZyzVnKsYtqlwaq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        288
+      ],
+      "id": "9e99ec29-b209-4a26-88ac-8eed8e1750c0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "4CccSWPdPTJ5OQqH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bdee71d0-06ab-4747-ba5c-7fecc7e4e05c",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "6d79d5f5-c23a-458c-a205-a6b4005fe829",
+              "name": "data.respuesta_cliente",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "82a44cb6-bb9f-41f1-9f58-b4daf92b310d",
+              "name": "data.estado",
+              "value": "CONSULTANDO",
+              "type": "string"
+            },
+            {
+              "id": "e5a874c0-7de4-49d0-97a3-9ce79de2eed7",
+              "name": "data.clave",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        832,
+        -16
+      ],
+      "id": "037aca62-dd68-40eb-a497-b12ff6dc2aa9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "42241b93-695d-445c-8ea0-12d1b98f5352",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "560935d8-97ba-45c8-b831-81c0f9dafe39",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "309ba160-897a-4a50-b074-3a3c6e7ae19b",
+              "name": "data.respuesta_cliente",
+              "value": "Disculpá, en este momento experimentamos un problema técnico. Por favor, intentá nuevamente en unos minutos.",
+              "type": "string"
+            },
+            {
+              "id": "3d8a81b4-4038-48a3-8f63-db3222ae08b2",
+              "name": "error.message",
+              "value": "={{ $json.message || 'Error desconocido en ejecución de sub-flujo' }}",
+              "type": "string"
+            },
+            {
+              "id": "cccf4700-2558-4d16-99fe-df536ef1b2ba",
+              "name": "data.estado",
+              "value": "ERROR",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        832,
+        240
+      ],
+      "id": "e5255cc3-1faf-4067-9657-4a4128cf6c18",
+      "name": "Error"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7ff36dc8-21bd-4c33-ba19-decb2d1fb8a4",
+  "meta": {
+    "instanceId": "9d56dafec9cde7607067980fdd28d6e659f0f74667a74870c335326c02886524"
+  },
+  "nodeGroups": [],
+  "id": "CSXV95Q6WU9gninS",
+  "tags": []
+}
